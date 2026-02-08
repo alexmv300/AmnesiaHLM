@@ -85,8 +85,8 @@ cLuxDebugHandler::cLuxDebugHandler() : iLuxUpdateable("LuxDebugHandler")
 
 	mbWindowActive = false;
 	
-	mbFastForward = false;
-	mpCBFastForward = NULL;
+	//mbFastForward = false;
+	//mpCBFastForward = NULL;
 }
 
 //-----------------------------------------------------------------------
@@ -421,9 +421,12 @@ void cLuxDebugHandler::OnDraw(float afFrameTime)
 															pCharBody->GetMass(),
 															pCharBody->GetActiveSize());
 		fY+=15.0f;
+
+		cVector3f speed = pCharBody->GetVelocity(gpBase->mpEngine->GetStepSize());
+		speed.y = 0;
 		gpBase->mpGameDebugSet->DrawFont(gpBase->mpDefaultFont, cVector3f(5,fY,10),14,cColor(1,1),
 			_W("MoveSpeed: %f, %f (%f) Mul: %f AvgSpeed: %f\n"), pCharBody->GetMoveSpeed(eCharDir_Forward), pCharBody->GetMoveSpeed(eCharDir_Right),
-																	pCharBody->GetVelocity(gpBase->mpEngine->GetStepSize()).Length(),
+																	speed.Length(),
 																	pPlayer->GetInteractionMoveSpeedMul(),
 																	pPlayer->GetAvgSpeed());
 		fY+=15.0f;
@@ -499,6 +502,14 @@ void cLuxDebugHandler::OnDraw(float afFrameTime)
 		gpBase->mpGameDebugSet->DrawFont(gpBase->mpDefaultFont, cVector3f(5,fY,10),14,cColor(1,1),
 			_W("Hardcore mode: %d "), gpBase->mbHardMode);
 		fY+=15.0f;
+
+		gpBase->mpGameDebugSet->DrawFont(gpBase->mpDefaultFont, cVector3f(5, fY, 10), 14, cColor(1, 1),
+			_W("Quake velocity: %ls "),cString::To16Char(pPlayer->GetCharacterBody()->GetQVelocity().ToString()).c_str());
+		fY += 15.0f;
+
+		gpBase->mpGameDebugSet->DrawFont(gpBase->mpDefaultFont, cVector3f(5, fY, 10), 14, cColor(1, 1),
+			_W("WHATEVER YOU WANT: %f\n"), pPlayer->GetCharacterBody()->GetSmth());
+		fY += 15.0f;
 
         fY = pPlayer->GetStateData(pPlayer->GetCurrentState())->DrawDebug(gpBase->mpGameDebugSet,gpBase->mpDefaultFont, fY);		
 	}
@@ -707,17 +718,14 @@ void cLuxDebugHandler::AddMessage(const tWString& asText, bool abCheckForDuplica
 
 //-----------------------------------------------------------------------
 
-void cLuxDebugHandler::SetFastForward(bool abX)
+void cLuxDebugHandler::SetTimescale(float afX)
 {
-	if(mbFastForward == abX) return;
+	if (mpCBTimescale)
+	{
+		gpBase->mpEngine->SetSpeedMul(mbFastForward ? afX : 1.0f);
 
-	mbFastForward = abX;
-
-	if(mpCBFastForward) mpCBFastForward->SetChecked(mbFastForward, false);
-
-	gpBase->mpEngine->SetSpeedMul(mbFastForward ? 4.0f : 1.0f);
-
-	gpBase->mpEngine->GetSound()->GetSoundHandler()->SetGlobalSpeed(mbFastForward ? 4.0f : 1.0f,eSoundEntryType_All, eLuxGlobalVolumeType_DebugMenu);
+		gpBase->mpEngine->GetSound()->GetSoundHandler()->SetGlobalSpeed(mbFastForward ? afX : 1.0f, eSoundEntryType_All, eLuxGlobalVolumeType_DebugMenu);
+	}
 }
 
 //-----------------------------------------------------------------------
@@ -955,6 +963,7 @@ void cLuxDebugHandler::CreateGuiWindow()
 	cWidgetLabel *pLabel = NULL;
 	cWidgetGroup *pGroup = NULL;
 	cWidgetSlider *pSlider = NULL;
+	cWidgetTextBox* pTextBox = NULL;
 
 	cVector3f vGroupPos =0;
 	cVector2f vGroupSize =0;
@@ -1153,11 +1162,23 @@ void cLuxDebugHandler::CreateGuiWindow()
 		if(gpBase->mpInsanityHandler->GetEventNum()>0) mpCBInsanityEvents->SetSelectedItem(0);
 		vGroupPos.y += 22;
 
-		mpCBFastForward = mpGuiSet->CreateWidgetCheckBox(vGroupPos, vSize, _W("Fast Forward (F3)"), pGroup);
-		mpCBFastForward->SetChecked(mbFastForward, false);
-		mpCBFastForward->AddCallback(eGuiMessage_CheckChange,this, kGuiCallback(ChangeDebugText));
-		mpCBFastForward->SetUserValue(17);
+		mpCBTimescale = mpGuiSet->CreateWidgetCheckBox(vGroupPos, vSize, _W("Enable custom timescale"), pGroup);
+		mpCBTimescale->SetChecked(false);
+		mpCBTimescale->SetUserValue(16);
+		mpCBTimescale->AddCallback(eGuiMessage_CheckChange, this, kGuiCallback(ChangeDebugText));
 		vGroupPos.y += 22;
+
+		pSlider = mpGuiSet->CreateWidgetSlider(eWidgetSliderOrientation_Horizontal, vGroupPos, vSize, 100, pGroup);
+		pSlider->SetValue(1, false);
+		pSlider->SetUserValue(18);
+		pSlider->AddCallback(eGuiMessage_SliderMove, this, kGuiCallback(ChangeDebugText));
+		vGroupPos.y += 22;
+
+		//mpCBFastForward = mpGuiSet->CreateWidgetCheckBox(vGroupPos, vSize, _W("Fast Forward (F3)"), pGroup);
+		//mpCBFastForward->SetChecked(mbFastForward, false);
+		//mpCBFastForward->AddCallback(eGuiMessage_CheckChange,this, kGuiCallback(ChangeDebugText));
+		//mpCBFastForward->SetUserValue(17);
+		//vGroupPos.y += 22;
 
 		//Enable fly camera
 		pCheckBox = mpGuiSet->CreateWidgetCheckBox(vGroupPos, vSize, _W("Fly camera"), pGroup);
@@ -1173,6 +1194,15 @@ void cLuxDebugHandler::CreateGuiWindow()
 		pSlider->AddCallback(eGuiMessage_SliderMove, this, kGuiCallback(ChangeDebugText));
 		vGroupPos.y += 22;
 
+		pLabel = mpGuiSet->CreateWidgetLabel(vGroupPos, vSize, _W("Camera field of view"), pGroup);
+		vGroupPos.y += 22;
+
+		float fFOV = gpBase->mpPlayer->GetCamera()->GetFOV();
+		pSlider = mpGuiSet->CreateWidgetSlider(eWidgetSliderOrientation_Horizontal, vGroupPos, vSize, 179, pGroup);
+		pSlider->SetValue(fFOV, false);
+		pSlider->SetUserValue(15);
+		pSlider->AddCallback(eGuiMessage_SliderMove, this, kGuiCallback(ChangeDebugText));
+		vGroupPos.y += 22;
 
 		//Group end
 		vGroupSize.y = vGroupPos.y + 15;
@@ -1561,24 +1591,27 @@ bool cLuxDebugHandler::ChangeDebugText(iWidget* apWidget, const cGuiMessageData&
 	int lNum = apWidget->GetUserValue();
 	bool bActive = aData.mlVal == 1;
 
-    if(lNum == 0)		mbShowFPS = bActive;
-	else if(lNum == 1)	 mbShowPlayerInfo = bActive;
-	else if(lNum == 2)	 mbShowEntityInfo = bActive;
-	else if(lNum == 3)	 mbShowSoundPlaying = bActive;
-	else if(lNum == 4)	 mbShowDebugMessages = bActive;
-	else if(lNum == 5)	 mbInspectionMode = bActive;
-	else if(lNum == 6)	 gpBase->mpMapHandler->GetViewport()->GetRenderSettings()->mbUseOcclusionCulling = bActive;
-	else if(lNum == 7)	 iResourceBase::SetLogCreateAndDelete(bActive);
-	else if(lNum == 8)	 mbReloadFromCurrentPosition = bActive;
-	else if(lNum == 9)	 gpBase->mpConfigHandler->mbFastPhysicsLoad = bActive;
-	else if(lNum == 10)	 mbDisableFlashBacks = bActive;
-	else if(lNum == 11)  mbDrawPhysics = bActive;
-	else if(lNum == 12)  mbShowErrorMessages = bActive;
+	if (lNum == 0)		mbShowFPS = bActive;
+	else if (lNum == 1)	 mbShowPlayerInfo = bActive;
+	else if (lNum == 2)	 mbShowEntityInfo = bActive;
+	else if (lNum == 3)	 mbShowSoundPlaying = bActive;
+	else if (lNum == 4)	 mbShowDebugMessages = bActive;
+	else if (lNum == 5)	 mbInspectionMode = bActive;
+	else if (lNum == 6)	 gpBase->mpMapHandler->GetViewport()->GetRenderSettings()->mbUseOcclusionCulling = bActive;
+	else if (lNum == 7)	 iResourceBase::SetLogCreateAndDelete(bActive);
+	else if (lNum == 8)	 mbReloadFromCurrentPosition = bActive;
+	else if (lNum == 9)	 gpBase->mpConfigHandler->mbFastPhysicsLoad = bActive;
+	else if (lNum == 10)	 mbDisableFlashBacks = bActive;
+	else if (lNum == 11)  mbDrawPhysics = bActive;
+	else if (lNum == 12)  mbShowErrorMessages = bActive;
 
-	else if(lNum == 13)  gpBase->mpPlayer->SetFreeCamActive(bActive);
-	else if(lNum == 14)  gpBase->mpPlayer->SetFreeCamSpeed( cMath::Max((float)aData.mlVal/ 100.0f, 0.001f) );
+	else if (lNum == 13)  gpBase->mpPlayer->SetFreeCamActive(bActive);
+	else if (lNum == 14)  gpBase->mpPlayer->SetFreeCamSpeed(cMath::Max((float)aData.mlVal / 100.0f, 0.001f));
 
-	else if(lNum == 17)  SetFastForward(bActive);
+	else if (lNum == 15)  gpBase->mpPlayer->GetCamera()->SetFOV(cMath::ToRad(aData.mlVal));
+
+	else if (lNum == 18)  SetTimescale(aData.mlVal);
+	//else if(lNum == 17)  SetFastForward(bActive);
 	
 
 	return true;

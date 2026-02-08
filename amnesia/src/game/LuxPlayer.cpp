@@ -758,7 +758,7 @@ void cLuxPlayer::Run(bool abPressed)
 
 void cLuxPlayer::Jump(bool abPressed)
 {
-	if(abPressed && (mbJumpDisabled || mpInsanityCollapse->IsActive()) ) return;
+	if( mbJumpDisabled || mpInsanityCollapse->IsActive() ) return;
 
 	mbPressingJump = abPressed;
 	if(mvStates[mState]->OnJump(abPressed))
@@ -776,6 +776,11 @@ void cLuxPlayer::Crouch(bool abPressed)
 		mvMoveStates[mMoveState]->OnCrouch(abPressed);
 	}
 }
+
+//void cLuxPlayer::Dash(bool abPressed)
+//{
+//	return;
+//}
 
 //-----------------------------------------------------------------------
 
@@ -1196,7 +1201,7 @@ void cLuxPlayer::UpdateHeadPosAdd(float afTimeStep)
 
 	/////////////////////////
 	// Iterate different head offsets and add
-    for(size_t i=0; i<mvHeadPosAdds.size(); ++i)
+    for (size_t i = 0; i<mvHeadPosAdds.size(); ++i)
 	{
 		cLuxHeadPosAdd *pPosAdd = &mvHeadPosAdds[i];
 
@@ -1215,7 +1220,7 @@ void cLuxPlayer::UpdateHeadPosAdd(float afTimeStep)
 				fSpeed *= fDist / pPosAdd->mfMoveSlowDownDist;
 			}
 
-			pPosAdd->mvAdd += vDir * fSpeed * afTimeStep;
+			pPosAdd->mvAdd += vDir * afTimeStep;
 
 			if(fDist < 0.001f)
 			{
@@ -1227,7 +1232,7 @@ void cLuxPlayer::UpdateHeadPosAdd(float afTimeStep)
 		vAdd += pPosAdd->mvAdd;
 	}
 	mvHeadPosAddSum = vAdd - mvCameraPosAdd;
-
+	
 	
 	mpCharBody->SetCameraPosAdd(vAdd);
 }

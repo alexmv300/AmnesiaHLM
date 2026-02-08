@@ -922,20 +922,26 @@ void cLuxInputHandler::UpdateGameInput()
 	}
 	if(mpInput->BecameTriggerd(eLuxAction_FastForward) && gpBase->mpConfigHandler->mbLoadDebugMenu)
 	{
-		bool bActivate = !gpBase->mpDebugHandler->GetFastForward();
-
-		gpBase->mpDebugHandler->SetFastForward(bActivate);
+		//bool bActivate = !gpBase->mpDebugHandler->GetFastForward();
+		//
+		//gpBase->mpDebugHandler->SetFastForward(bActivate);
+		return;
 	}
 
 	if(mpPlayer->IsDead()==false && gpBase->mpDebugHandler->GetAllowQuickSave() && gpBase->mbPTestActivated==false)
 	{
 		if(mpInput->BecameTriggerd(eLuxAction_QuickSave))
 		{
-			gpBase->mpSaveHandler->AutoSave();
+			gpBase->mpSaveHandler->SaveGameToFile(gpBase->msProfileSavePath + gpBase->mpSaveHandler->GetSaveName(_W("QuickSave")));;
 		}
 		if(mpInput->BecameTriggerd(eLuxAction_QuickLoad))
 		{
+			//gpBase->mpEngine->GetUpdater()->SetContainer("Default");
+			gpBase->mpEngine->GetUpdater()->BroadcastMessageToAll(eUpdateableMessage_Reset);
+
 			gpBase->mpSaveHandler->AutoLoad(false);
+			//tWString sFile = gpBase->mpSaveHandler->GetNewestSaveFile(gpBase->msProfileSavePath);
+			//gpBase->mpSaveHandler->LoadGameFromFile(gpBase->msProfileSavePath+sFile);
 		}
 	}
 
@@ -973,6 +979,8 @@ void cLuxInputHandler::UpdateGameInput()
 
 void cLuxInputHandler::UpdateGamePlayerInput()
 {
+	iCharacterBody* pCharBody = gpBase->mpPlayer->GetCharacterBody();
+
 	/////////////////
 	// Check if player is dead
 	if(mpPlayer->IsDead())
@@ -1023,22 +1031,40 @@ void cLuxInputHandler::UpdateGamePlayerInput()
 
 	/////////////////
 	// Movement Direction
-	if(mpInput->IsTriggerd(eLuxAction_Forward))
-	{
-		mpPlayer->Move(eCharDir_Forward, 1);
-	}
-	if(mpInput->IsTriggerd(eLuxAction_Backward))
-	{
-		mpPlayer->Move(eCharDir_Forward, -1);
-	}
-	if(mpInput->IsTriggerd(eLuxAction_Right))
-	{
-		mpPlayer->Move(eCharDir_Right, 1);
-	}
-	if(mpInput->IsTriggerd(eLuxAction_Left))
-	{
-		mpPlayer->Move(eCharDir_Right, -1);
-	}
+	//if (mpInput->BecameTriggerd(eLuxAction_Forward))
+	//{
+	//	//mpPlayer->Move(eCharDir_Forward, 1);
+	//	pCharBody->fmove = 1;
+	//}
+	//if(mpInput->BecameTriggerd(eLuxAction_Backward))
+	//{
+	//	//mpPlayer->Move(eCharDir_Forward, -1);
+	//	pCharBody->fmove = -1;
+	//}
+	//if (mpInput->WasTriggerd(eLuxAction_Forward) && mpInput->WasTriggerd(eLuxAction_Backward))
+	//{
+	//	//mpPlayer->Move(eCharDir_Forward, -1);
+	//	pCharBody->fmove = 0;
+	//}
+	//if(mpInput->BecameTriggerd(eLuxAction_Right))
+	//{
+	//	//mpPlayer->Move(eCharDir_Right, 1);
+	//	pCharBody->smove = 1;
+	//}
+	//if(mpInput->BecameTriggerd(eLuxAction_Left))
+	//{
+	//	//mpPlayer->Move(eCharDir_Right, -1);
+	//	pCharBody->smove = -1;
+	//}
+	//if (mpInput->WasTriggerd(eLuxAction_Right) && mpInput->WasTriggerd(eLuxAction_Left))
+	//{
+	//	//mpPlayer->Move(eCharDir_Forward, -1);
+	//	pCharBody->smove = 0;
+	//}
+	//cAction* pAction = mpInput->GetAction()
+	pCharBody->fmove = (int)mpInput->IsTriggerd(eLuxAction_Forward) - (int)mpInput->IsTriggerd(eLuxAction_Backward);
+	pCharBody->smove = (int)mpInput->IsTriggerd(eLuxAction_Right) - (int)mpInput->IsTriggerd(eLuxAction_Left);
+	//	pCharBody->smth = 1;
 
 	/////////////////
 	// Lean

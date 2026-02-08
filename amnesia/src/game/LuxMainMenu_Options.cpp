@@ -108,6 +108,10 @@ cLuxMainMenu_Options::cLuxMainMenu_Options(cGuiSet *apGuiSet, cGuiSkin *apGuiSki
 	mbTipTextReset = false;
 	mpCurrentTipWidget = NULL;
 
+	mfFOVMin = 30.0f;
+	mfFOVStep = 5.0f;
+	mfFOVMax = 120.0f;
+
 	mfGammaMin = 0.3f;
 	mfGammaStep = 0.05f;
 	mfGammaMax = 2.0f;
@@ -345,6 +349,13 @@ void cLuxMainMenu_Options::AddGameOptions(cWidgetTab* apTab)
 		vPos.y += mpChBShowCommentary->GetSize().y + 15;
 	}
 	
+	pLabel = mpGuiSet->CreateWidgetLabel(vPos, -1, kTranslate("OptionsMenu", "FieldOfView"), apTab);
+	mpSFOV = mpGuiSet->CreateWidgetSlider(eWidgetSliderOrientation_Horizontal, cVector3f(0, pLabel->GetSize().y + 5, 0), cVector2f(150, 20), 0, pLabel);
+	//SetUpInput(pLabel, mpSFOV, false, kTranslate("OptionsMenu", "MouseSensitivityTip"));
+	SetUpSlider(mpSFOV, mfFOVMin, mfFOVMax, mfFOVStep, kGuiCallback(FOVSlider_OnMove), &mpLFOV);
+
+	vPos.y += mpSFOV->GetLocalPosition().y + mpSFOV->GetSize().y + 15;
+
 	// Populate languages
 	PopulateLanguageList();
 
@@ -1061,6 +1072,10 @@ void cLuxMainMenu_Options::SetInputValues(cResourceVarsObject& aObj)
 			mpChBShowCommentary->SetChecked(aObj.GetVarBool("ShowCommentary"), false);
 		}
 
+		float fFOV = gpBase->mpGameCfg->GetFloat("Player_General", "FOV", 70);
+		SetSliderValue(mpSFOV, fFOV, false, mfFOVMin, mfFOVMax);
+		SetFOVLabelString(fFOV);
+
 		// Language
 		{
 			tString sLang = aObj.GetVarString("Language", gpBase->msDefaultGameLanguage);
@@ -1423,6 +1438,9 @@ void cLuxMainMenu_Options::ApplyChanges()
 		gpBase->mpPlayer->SetShowCrosshair(mpChBShowCrosshair->IsChecked());
 
 		gpBase->mpPlayer->SetFocusIconStyle((eLuxFocusIconStyle)mpCBFocusIconStyle->GetSelectedItem());
+
+		gpBase->mpGameCfg->SetFloat("Player_General", "FOV", GetFOV());
+		gpBase->mpGameCfg->Save();
 	}
 
 	
@@ -1533,6 +1551,11 @@ void cLuxMainMenu_Options::ApplyChanges()
 
 
 //-----------------------------------------------------------------------
+
+void cLuxMainMenu_Options::SetFOVLabelString(float afX)
+{
+	SetSliderLabelString(mpLFOV, afX, mfFOVMin, mfFOVMax);
+}
 
 void cLuxMainMenu_Options::SetGammaLabelString(float afX)
 {
@@ -2038,6 +2061,24 @@ bool cLuxMainMenu_Options::Option_OnChangeValue(iWidget* apWidget, const cGuiMes
 kGuiCallbackDeclaredFuncEnd(cLuxMainMenu_Options, Option_OnChangeValue);
 
 //-----------------------------------------------------------------------
+
+bool cLuxMainMenu_Options::FOVSlider_OnMove(iWidget* apWidget, const cGuiMessageData& aData)
+{
+	float fFOV = GetFOV();
+	SetFOVLabelString(fFOV);
+
+	//gpBase->mpGameCfg->SetFloat("Player_General", "FOV", fFOV);
+	if (gpBase->mpMapHandler->MapIsLoaded())
+	{
+		gpBase->mpPlayer->GetCamera()->SetFOV(cMath::ToRad(fFOV));
+		return true;
+	}
+	else
+	{
+		return true;
+	}
+}
+kGuiCallbackDeclaredFuncEnd(cLuxMainMenu_Options, FOVSlider_OnMove);
 
 bool cLuxMainMenu_Options::GammaSlider_OnMove(iWidget* apWidget, const cGuiMessageData& aData)
 {

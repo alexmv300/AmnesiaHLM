@@ -267,7 +267,7 @@ namespace hpl {
 		}
 		else
 		{
-			mpCurrentShape = mpWorld->CreateCylinderShape(fRadius, avSize.y,&mtxOffset);
+			mpCurrentShape = mpWorld->CreateCylinderShape(fRadius, avSize.y,&mtxOffset);;
 		}
 		mpCurrentBody = mpWorld->CreateBody(asName, mpCurrentShape);
 		
@@ -329,6 +329,9 @@ namespace hpl {
 		
 		mvForce = cVector3f(0,0,0);
 		mvVelocity = cVector3f(0,0,0);
+
+		g_friction = 6;
+		maxspeed = 4;
 
 		mvLastGroundNormal = cVector3f(0,0,0);
 		
@@ -980,22 +983,28 @@ namespace hpl {
 		UpdateStepClimbing(afTimeStep);
 
 		//Update the position according to speed and heading
-		cVector3f vPosAdd = UpdatePostionFromCharSpeed(afTimeStep);
+		cVector3f vPosAdd; //= UpdatePostionFromCharSpeed(afTimeStep);
 
-		AlignPosAddAccordingToGroundNormal(vPosAdd);
+		//fmove = cMath::Clamp(fmove, -1, 1);
+		//smove = cMath::Clamp(smove, -1, 1);
+		UserFriction(afTimeStep);
 
-		mvLastMovePosAdd = vPosAdd;
+		AirMove(afTimeStep);
+
+		AlignPosAddAccordingToGroundNormal(velocity);
+
+		mvLastMovePosAdd = velocity;
 
 		//////////////////////////
 		//Check for collision.
 		if(mbTestCollision)
 		{
 			//XZ
-			CheckMoveCollision(vPosAdd, afTimeStep);
+			CheckMoveCollision(velocity, afTimeStep);
 		}
 		else
 		{
-			mvPosition += vPosAdd;
+			mvPosition += velocity;
 		}
 
 		//////////////////////////
@@ -1500,11 +1509,11 @@ namespace hpl {
 				mfMoveSpeed[i] += fSpeedAdd;
 				if(mfMoveSpeed[i] < fMaxNegSpeed) mfMoveSpeed[i] = fMaxNegSpeed;
 			}
-			
 
 
 			mfCurrentMoveAcc[i] = 0;	//Reset
 		}
+
 		
 		//Init variables
 		cVector3f vPosAdd =0;
@@ -1515,7 +1524,7 @@ namespace hpl {
 
 		//TODO: This does not work when one lowers the speed (since it also caps max speed!). So leave in strafe bug / trick for now!
 		//Make sure speed is not greater than max forward.
-		/*float fMaxStep = mfMoveSpeed[eCharDir_Forward] >=0 ? mfMaxPosMoveSpeed[eCharDir_Forward] : mfMaxNegMoveSpeed[eCharDir_Forward];
+		/*float fMaxStep = mfMoveSpeed[eCharDir_Forward] >= 0 ? mfMaxPosMoveSpeed[eCharDir_Forward] : mfMaxNegMoveSpeed[eCharDir_Forward];
 		
 		fMaxStep *= afTimeStep;
 		fMaxStep = cMath::Abs(fMaxStep);
@@ -1529,6 +1538,130 @@ namespace hpl {
 
 		//Finally update position
 		return vPosAdd;
+	}
+
+
+
+	void iCharacterBody::Accelerate(float afTimeStep)
+	{
+		float addspeed, accelspeed, currentspeed;
+
+		currentspeed = cMath::Vector3Dot(velocity, wishdir);
+		addspeed = wishspeed - currentspeed;
+		if (addspeed <= 0) {
+			return; 
+		}
+
+		accelspeed = 0.1/18 * wishspeed;
+
+		if (accelspeed > addspeed)
+			accelspeed = addspeed;
+
+		velocity.x += accelspeed * wishdir.x;
+		velocity.z += accelspeed * wishdir.z;
+	}
+
+	void iCharacterBody::AirAccelerate(float afTimeStep, cVector3f wishvel)
+	{
+		float addspeed, accelspeed, currentspeed, wishspd = wishspeed;
+
+		if (wishspd > .3/18)
+			wishspd = .3/18;
+		currentspeed = cMath::Vector3Dot(velocity, wishdir);
+		addspeed = wishspd - currentspeed;
+		if (addspeed <= 0) {
+			return;
+		}
+
+		accelspeed = 1.5/18 * wishspeed;
+
+		if (accelspeed > addspeed)
+			accelspeed = addspeed;
+
+		velocity.x += accelspeed * wishdir.x ;
+		velocity.z += accelspeed * wishdir.z ;
+	}
+
+	void iCharacterBody::UserFriction(float afTimeStep)
+	{
+		float speed, newspeed, control;
+		float drop = 0;
+		cVector3f vel = velocity;
+
+		vel.y = 0;
+		speed = vel.Length();
+		if (speed < .1/18) {
+			velocity.x = 0;
+			velocity.z = 0;
+			return;
+		}
+		
+		if (IsOnGround())
+		{
+			control = speed < 1/18 ? 1/18 : speed;
+			drop += control * g_friction * afTimeStep;
+		}
+		
+		newspeed = speed - drop;
+		//smth = speed - drop;
+		if (newspeed < 0)
+		{
+			newspeed = 0;
+		}
+		if (speed > 0)
+		{
+			newspeed /= speed;
+		}
+
+		velocity.x *= newspeed;
+		velocity.z *= newspeed;
+	}
+
+	void iCharacterBody::AirMove(float afTimeStep)
+	{
+		cVector3f wishvel;
+		cVector3f forward, right;
+
+		forward = mvForward;
+		right = mvRight;
+		forward.y = 0;
+		right.y = 0;
+		forward = cMath::Vector3Normalize(forward);
+		right = cMath::Vector3Normalize(right);
+
+		wishvel = forward * fmove + right * smove;
+		wishvel.y = 0;
+
+		wishdir = wishvel;
+		wishspeed = wishdir.Normalize();
+
+		if (wishspeed != 0 && (wishspeed > maxspeed))
+		{
+			wishvel = wishvel * (maxspeed / wishspeed);
+			wishspeed = maxspeed;
+		}
+
+		if (IsOnGround())
+		{
+			Accelerate(afTimeStep);
+		}
+		else
+		{
+			AirAccelerate(afTimeStep, wishvel);
+		}
+
+		smth = velocity.Length();
+	}
+
+	cVector3f iCharacterBody::GetQVelocity()
+	{
+		return velocity;
+	}
+
+	//for debugging purposes VVV
+	float iCharacterBody::GetSmth()
+	{
+		return smth;
 	}
 
 	//-----------------------------------------------------------------------
@@ -1739,29 +1872,54 @@ namespace hpl {
 		////////////////////
 		// Friction (only do for x and z? Really good idea? I think so!)
 		float fFriction = IsOnGround() ? mfGroundFriction : mfAirFriction;
-
+		
 		cVector3f vVelXZ(mvVelocity.x, 0,mvVelocity.z);
 		float fSpeed = vVelXZ.Length();
 		vVelXZ.Normalize();
-
+		
 		fSpeed -= fFriction * afTimeStep;
 		if(fSpeed<0) fSpeed=0;
-
+		
 		mvVelocity.x = vVelXZ.x * fSpeed;
 		mvVelocity.z = vVelXZ.z * fSpeed;
-
+		
 		////////////////////
 		// Attachment friction
 		fSpeed = mvGravityAttachmentVelocity.Length();
 		if(fSpeed >0)
 		{
 			cVector3f vDir = mvGravityAttachmentVelocity / fSpeed;
-
+		
 			fSpeed -= mfAirFriction * afTimeStep;
 			if(fSpeed<0) fSpeed =0;
-
+		
 			mvGravityAttachmentVelocity = vDir * fSpeed;
 		}
+		//cVector3f vel(mvVelocity);
+		//cVector3f start;
+		//cVector3f stop;
+		//float friction;
+		//float speed, newspeed, control;
+		//speed = sqrt(vel.x * vel.x + vel.z + vel.z);
+		//if (speed < 1)
+		//{
+		//	mvVelocity.x = 0;
+		//	mvVelocity.z = 0;
+		//	return;
+		//}
+		//friction = mfGroundFriction;
+		//if (IsOnGround())
+		//{
+		//	control = speed < 1 ? 1 : speed;
+		//	newspeed = speed - afTimeStep * control * friction;
+		//
+		//	if (newspeed < 0)
+		//		newspeed = 0;
+		//	newspeed /= speed;
+		//
+		//	vel.x *= newspeed;
+		//	vel.z *= newspeed;
+		//}
 	}
 
 	//-----------------------------------------------------------------------

@@ -172,6 +172,15 @@ namespace hpl {
 
 		cVector3f GetVelocity(float afFrameTime);
 
+		float fmove, smove;
+		cVector3f velocity;
+		float smth;
+		void Accelerate(float afTimeStep);
+		void AirAccelerate(float afTimeStep, cVector3f wishvel);
+		void AirMove();
+		cVector3f GetQVelocity();
+		float GetSmth();
+
 		void SetPosition(const cVector3f& avPos, bool abSmooth=false);
 		const cVector3f& GetPosition();
 		const cVector3f& GetLastPosition();
@@ -354,6 +363,10 @@ namespace hpl {
 		
 		cVector3f UpdatePostionFromCharSpeed(float afTimeStep);
 
+		void UserFriction(float afTimeStep);
+
+		void AirMove(float afTimeStep);
+
 		void AlignPosAddAccordingToGroundNormal(cVector3f &avPosAdd);
 
 		void CheckMoveCollision(const cVector3f &avPosAdd, float afTimeStep);
@@ -401,6 +414,11 @@ namespace hpl {
 		float mfMaxGravitySpeed;
 		bool mbCustomGravity;
 		cVector3f mvCustomGravity;
+
+		float g_friction;
+		cVector3f wishdir;
+		float wishspeed;
+		float maxspeed;
 
 		cVector3f mvPosition;
 		cVector3f mvLastPosition;

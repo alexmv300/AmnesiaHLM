@@ -337,6 +337,18 @@ void cLuxMoveState_Normal::Jump()
 	mfJumpCount = 0;
 }
 
+//void cLuxMoveState_Normal::Dash()
+//{
+//	iCharacterBody* pCharBody = mpPlayer->GetCharacterBody();
+//
+//	SetCrouch(false);
+//
+//	float fStartForce = 30;
+//
+//	pCharBody->AddForceVelocity(cVector3f(30, 0, 30) * pCharBody->GetForward());
+//	mpPlayer->Move()
+//}
+
 //-----------------------------------------------------------------------
 
 void cLuxMoveState_Normal::OnDraw(float afFrameTime)
@@ -552,7 +564,7 @@ void cLuxMoveState_Normal::UpdateJumpAndGroundCheck(float afTimeStep)
 
 	////////////////////////////
 	// Update Jump button is held down.
-	if(mbJumping)
+	if (mbJumping)
 	{
 		mfJumpCount += afTimeStep;
 		if(mfJumpCount >= mfMaxJumpCount)
@@ -567,7 +579,7 @@ void cLuxMoveState_Normal::UpdateJumpAndGroundCheck(float afTimeStep)
 
 		//Remove some gravity and make jump last longer.
 		float fMul = 0.4f + 0.5f * (1 - mfJumpCount / mfMaxJumpCount);
-		pCharBody->AddForce(cVector3f(0,-vGravity.y * pCharBody->GetMass() * fMul,0));		
+		pCharBody->AddForce(cVector3f(0,-vGravity.y * pCharBody->GetMass() * fMul,0));
 	}
 }
 

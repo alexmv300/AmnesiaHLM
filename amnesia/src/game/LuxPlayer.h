@@ -110,6 +110,8 @@ public:
 	void Run(bool abPressed);
 	void Jump(bool abPressed);
 	void Crouch(bool abPressed);
+
+	void Dash(bool abPressed);
 	
 	void ChangeState(eLuxPlayerState aState);
 	eLuxPlayerState GetCurrentState(){ return mState;}

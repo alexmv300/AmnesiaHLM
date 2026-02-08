@@ -70,7 +70,7 @@ public:
 	bool GetDisableFlashBacks(){ return mbDisableFlashBacks;}
 	bool GetAllowQuickSave(){ return mbAllowQuickSave;}
 
-	void SetFastForward(bool abX);
+	void SetTimescale(float afX);
 	bool GetFastForward(){ return mbFastForward;}
 
 	void QuickReloadMap();
@@ -159,7 +159,8 @@ private:
 	cWidgetWindow *mpScriptOutputWindow;
 	cWidgetFrame *mpScriptOutputFrame;
 
-	cWidgetCheckBox *mpCBFastForward;
+	cWidgetCheckBox* mpCBTimescale;
+	//cWidgetCheckBox *mpCBFastForward;
 	
 	tWidgetList mlstScriptOutputWidgets;
 

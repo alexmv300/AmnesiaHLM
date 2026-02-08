@@ -71,6 +71,7 @@ private:
 
 	void ApplyChanges();
 
+	float GetFOV() { return GetSliderValue(mpSFOV, mfFOVMin, mfFOVMax); }
 	float GetGamma() { return GetSliderValue(mpSGamma, mfGammaMin, mfGammaMax); }
 	float GetSensitivity() { return GetSliderValue(mpSMouseSensitivity, mfMouseSensitivityMin, mfMouseSensitivityMax); }
 #ifdef USE_GAMEPAD
@@ -78,6 +79,7 @@ private:
 #endif
 	float GetVolume() { return GetSliderValue(mpSVolume, mfVolumeMin, mfVolumeMax); }
 
+	void SetFOVLabelString(float afX);
 	void SetGammaLabelString(float afX);
 	void SetSensitivityLabelString(float afX);
 	void SetGamepadLookSensitivityLabelString(float afX);
@@ -145,6 +147,8 @@ private:
 	cWidgetCheckBox *mpChBShowCrosshair;
 	cWidgetComboBox *mpCBFocusIconStyle;
 	cWidgetCheckBox *mpChBShowCommentary;
+	cWidgetLabel	*mpLFOV;
+	cWidgetSlider   *mpSFOV;
 	
 	// Graphics;
 	cWidgetDummy	*mpDBasicGfxOptions;
@@ -210,6 +214,10 @@ private:
 	cWidgetLabel  *mpLSndDevice;
 	cWidgetComboBox *mpCBSndDevice;
 
+	float mfFOVMin;
+	float mfFOVMax;
+	float mfFOVStep;
+
 	float mfGammaMin;
 	float mfGammaMax;
 	float mfGammaStep;
@@ -262,6 +270,9 @@ private:
 	
 	bool Option_OnChangeValue(iWidget* apWidget, const cGuiMessageData& aData);
 	kGuiCallbackDeclarationEnd(Option_OnChangeValue);	
+
+	bool FOVSlider_OnMove(iWidget* apWidget, const cGuiMessageData& aData);
+	kGuiCallbackDeclarationEnd(FOVSlider_OnMove);
 
 	bool GammaSlider_OnMove(iWidget* apWidget, const cGuiMessageData& aData);
 	kGuiCallbackDeclarationEnd(GammaSlider_OnMove);

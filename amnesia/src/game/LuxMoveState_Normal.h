@@ -78,6 +78,8 @@ public:
 	
 	void Jump();
 
+	void Dash();
+
 	void OnDraw(float afFrameTime);
 
 	float GetHeadBobCount(){ return mfHeadBobCount;}
