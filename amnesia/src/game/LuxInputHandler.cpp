@@ -922,9 +922,9 @@ void cLuxInputHandler::UpdateGameInput()
 	}
 	if(mpInput->BecameTriggerd(eLuxAction_FastForward) && gpBase->mpConfigHandler->mbLoadDebugMenu)
 	{
-		//bool bActivate = !gpBase->mpDebugHandler->GetFastForward();
-		//
-		//gpBase->mpDebugHandler->SetFastForward(bActivate);
+		bool bActivate = !gpBase->mpDebugHandler->GetFastForward();
+		
+		gpBase->mpDebugHandler->SetFastForward(bActivate);
 		return;
 	}
 
@@ -1061,10 +1061,9 @@ void cLuxInputHandler::UpdateGamePlayerInput()
 	//	//mpPlayer->Move(eCharDir_Forward, -1);
 	//	pCharBody->smove = 0;
 	//}
-	//cAction* pAction = mpInput->GetAction()
+
 	pCharBody->fmove = (int)mpInput->IsTriggerd(eLuxAction_Forward) - (int)mpInput->IsTriggerd(eLuxAction_Backward);
 	pCharBody->smove = (int)mpInput->IsTriggerd(eLuxAction_Right) - (int)mpInput->IsTriggerd(eLuxAction_Left);
-	//	pCharBody->smth = 1;
 
 	/////////////////
 	// Lean
@@ -1131,8 +1130,10 @@ void cLuxInputHandler::UpdateGamePlayerInput()
 	if(mpInput->WasTriggerd(eLuxAction_Run))	mpPlayer->Run(false);
 
 	//Jump
-	if(mpInput->BecameTriggerd(eLuxAction_Jump))mpPlayer->Jump(true);
-	if(mpInput->WasTriggerd(eLuxAction_Jump))	mpPlayer->Jump(false);
+	//if(mpInput->BecameTriggerd(eLuxAction_Jump))mpPlayer->Jump(true);
+	//if(mpInput->WasTriggerd(eLuxAction_Jump))	mpPlayer->Jump(false);
+	mpPlayer->Jump(mpInput->IsTriggerd(eLuxAction_Jump));
+	pCharBody->shouldJump = mpInput->IsTriggerd(eLuxAction_Jump);
 
 	//Crouch
 	if(mpInput->BecameTriggerd(eLuxAction_Crouch))mpPlayer->Crouch(true);

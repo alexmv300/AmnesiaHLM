@@ -331,7 +331,7 @@ namespace hpl {
 		mvVelocity = cVector3f(0,0,0);
 
 		g_friction = 6;
-		maxspeed = 4;
+		maxspeed = 5;
 
 		mvLastGroundNormal = cVector3f(0,0,0);
 		
@@ -1544,6 +1544,8 @@ namespace hpl {
 
 	void iCharacterBody::Accelerate(float afTimeStep)
 	{
+		if (shouldJump)
+			return;
 		float addspeed, accelspeed, currentspeed;
 
 		currentspeed = cMath::Vector3Dot(velocity, wishdir);
@@ -1573,7 +1575,7 @@ namespace hpl {
 			return;
 		}
 
-		accelspeed = 1.5/18 * wishspeed;
+		accelspeed = 0.1/18 * wishspeed;
 
 		if (accelspeed > addspeed)
 			accelspeed = addspeed;
@@ -1584,6 +1586,8 @@ namespace hpl {
 
 	void iCharacterBody::UserFriction(float afTimeStep)
 	{
+		if (shouldJump)
+			return;
 		float speed, newspeed, control;
 		float drop = 0;
 		cVector3f vel = velocity;

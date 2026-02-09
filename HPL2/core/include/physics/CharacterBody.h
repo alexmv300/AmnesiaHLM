@@ -172,7 +172,9 @@ namespace hpl {
 
 		cVector3f GetVelocity(float afFrameTime);
 
-		float fmove, smove;
+		bool shouldJump;
+
+		int fmove, smove;
 		cVector3f velocity;
 		float smth;
 		void Accelerate(float afTimeStep);

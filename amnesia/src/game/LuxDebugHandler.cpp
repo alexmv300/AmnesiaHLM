@@ -718,14 +718,17 @@ void cLuxDebugHandler::AddMessage(const tWString& asText, bool abCheckForDuplica
 
 //-----------------------------------------------------------------------
 
-void cLuxDebugHandler::SetTimescale(float afX)
+void cLuxDebugHandler::SetFastForward(bool abX)
 {
-	if (mpCBTimescale)
-	{
-		gpBase->mpEngine->SetSpeedMul(mbFastForward ? afX : 1.0f);
+	if (mbFastForward == abX) return;
 
-		gpBase->mpEngine->GetSound()->GetSoundHandler()->SetGlobalSpeed(mbFastForward ? afX : 1.0f, eSoundEntryType_All, eLuxGlobalVolumeType_DebugMenu);
-	}
+	mbFastForward = abX;
+
+	if (mpCBFastForward) mpCBFastForward->SetChecked(mbFastForward, false);
+
+	gpBase->mpEngine->SetSpeedMul(mbFastForward ? 4.0f : 1.0f);
+
+	gpBase->mpEngine->GetSound()->GetSoundHandler()->SetGlobalSpeed(mbFastForward ? 4.0f : 1.0f, eSoundEntryType_All, eLuxGlobalVolumeType_DebugMenu);
 }
 
 //-----------------------------------------------------------------------
@@ -1162,23 +1165,11 @@ void cLuxDebugHandler::CreateGuiWindow()
 		if(gpBase->mpInsanityHandler->GetEventNum()>0) mpCBInsanityEvents->SetSelectedItem(0);
 		vGroupPos.y += 22;
 
-		mpCBTimescale = mpGuiSet->CreateWidgetCheckBox(vGroupPos, vSize, _W("Enable custom timescale"), pGroup);
-		mpCBTimescale->SetChecked(false);
-		mpCBTimescale->SetUserValue(16);
-		mpCBTimescale->AddCallback(eGuiMessage_CheckChange, this, kGuiCallback(ChangeDebugText));
+		mpCBFastForward = mpGuiSet->CreateWidgetCheckBox(vGroupPos, vSize, _W("Fast Forward (F3)"), pGroup);
+		mpCBFastForward->SetChecked(mbFastForward, false);
+		mpCBFastForward->AddCallback(eGuiMessage_CheckChange,this, kGuiCallback(ChangeDebugText));
+		mpCBFastForward->SetUserValue(17);
 		vGroupPos.y += 22;
-
-		pSlider = mpGuiSet->CreateWidgetSlider(eWidgetSliderOrientation_Horizontal, vGroupPos, vSize, 100, pGroup);
-		pSlider->SetValue(1, false);
-		pSlider->SetUserValue(18);
-		pSlider->AddCallback(eGuiMessage_SliderMove, this, kGuiCallback(ChangeDebugText));
-		vGroupPos.y += 22;
-
-		//mpCBFastForward = mpGuiSet->CreateWidgetCheckBox(vGroupPos, vSize, _W("Fast Forward (F3)"), pGroup);
-		//mpCBFastForward->SetChecked(mbFastForward, false);
-		//mpCBFastForward->AddCallback(eGuiMessage_CheckChange,this, kGuiCallback(ChangeDebugText));
-		//mpCBFastForward->SetUserValue(17);
-		//vGroupPos.y += 22;
 
 		//Enable fly camera
 		pCheckBox = mpGuiSet->CreateWidgetCheckBox(vGroupPos, vSize, _W("Fly camera"), pGroup);
@@ -1610,8 +1601,7 @@ bool cLuxDebugHandler::ChangeDebugText(iWidget* apWidget, const cGuiMessageData&
 
 	else if (lNum == 15)  gpBase->mpPlayer->GetCamera()->SetFOV(cMath::ToRad(aData.mlVal));
 
-	else if (lNum == 18)  SetTimescale(aData.mlVal);
-	//else if(lNum == 17)  SetFastForward(bActive);
+	else if(lNum == 17)  SetFastForward(bActive);
 	
 
 	return true;
